@@ -7,7 +7,7 @@ from keras.models import Sequential
 
 
 def train_model(subjectNo, dropInitial=False):
-    data = loadmat('data/train_all/train_subject{}.mat'.format(subjectNo))
+    data = loadmat('../data/train_all/train_subject{}.mat'.format(subjectNo))
     X = data['X']
     y = data['y']
 
@@ -47,8 +47,8 @@ def train_model(subjectNo, dropInitial=False):
 
 def train_all(dropInitial=False):
 
-    X = np.load('data/train_all/allX.npy')
-    y = np.load('data/train_all/allY.npy')
+    X = np.load('../data/train_all/allX.npy')
+    y = np.load('../data/train_all/allY.npy')
 
     if dropInitial:
         X = X[:, :, int(X.shape[2]/3):]

@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from scipy.io import loadmat
 from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.pipeline import Pipeline
 from pickle import dump, load
 
@@ -13,8 +13,9 @@ def train_models(dropInitial=False):
             s = '0' + str(i)
         else:
             s = str(i)
+        print(f'training {s}')
 
-        temp = loadmat('data/train_all/train_subject{}.mat'.format(s))
+        temp = loadmat('../data/train_all/train_subject{}.mat'.format(s))
         X = temp['X']
         y = temp['y']
 
@@ -23,11 +24,16 @@ def train_models(dropInitial=False):
         X = X.reshape(X.shape[0], X.shape[1] * X.shape[2])
         y = y.reshape(y.shape[0])
 
-        scaler = StandardScaler()
+        # scaler = StandardScaler()
+        scaler = MinMaxScaler()
         model = LogisticRegression(solver='liblinear', penalty='l1')
         pipeline = Pipeline([('scaler', scaler), ('model', model)])
         pipeline.fit(X, y)
-        with open(f'models/individual_subjects/model_{s}.pkl', 'wb') as f:
+        if dropInitial:
+            fname = f'../models/individual_subjects/model_{s}_drop_initial.pkl'
+        else:
+            fname = f'../models/individual_subjects/model_{s}.pkl'
+        with open(fname, 'wb') as f:
             dump(pipeline, f)
 
 
@@ -39,14 +45,18 @@ def make_dataset(dropInitial=False):
         else:
             s = str(i)
         subjects.append(s)
-        with open(f'models/individual_subjects/model_{s}.pkl', 'rb') as f:
+        if dropInitial:
+            fname = f'../models/individual_subjects/model_{s}_drop_initial.pkl'
+        else:
+            fname = f'../models/individual_subjects/model_{s}.pkl'
+        with open(fname, 'rb') as f:
             pipelines[s] = load(f)
     columns = ['subject', 'trial', 'actual'] + \
         [f'model_{s}_pred' for s in subjects]
     ensembleData = pd.DataFrame(columns=columns)
 
     for s in subjects:
-        temp = loadmat('data/train_all/train_subject{}.mat'.format(s))
+        temp = loadmat('../data/train_all/train_subject{}.mat'.format(s))
         X, y = temp['X'], temp['y']
         if dropInitial:
             X = X[:, :, int(X.shape[2]/3):]
@@ -64,13 +74,18 @@ def make_dataset(dropInitial=False):
             tempDf.loc[:, f'model_{other}_pred'] = pred
         ensembleData = ensembleData.append(
             tempDf, ignore_index=True, sort=True)
-    ensembleData.to_csv('data/ensemble/ensemble.csv', index=False)
+    if dropInitial:
+        fname = '../data/ensemble/ensemble_drop_initial.csv'
+    else:
+        fname = '../data/ensemble/ensemble.csv'
+    ensembleData.to_csv(fname, index=False)
 
 
-def main(train=False):
+def main(train=True):
+    dropInitial=True
     if train:
-        train_models()
-    make_dataset()
+        train_models(dropInitial)
+    make_dataset(dropInitial)
 
 
 if __name__ == '__main__':

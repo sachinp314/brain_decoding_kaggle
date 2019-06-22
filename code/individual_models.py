@@ -9,11 +9,11 @@ from sklearn.svm import SVC
 
 
 def train_model(subjectNo, dropInitial=False, modelType='logreg'):
-    data = loadmat('data/train_all/train_subject{}.mat'.format(subjectNo))
+    data = loadmat('../data/train_all/train_subject{}.mat'.format(subjectNo))
     X = data['X']
     y = data['y']
 
-    print('train shape before flattening: {}'.format(X.shape))
+    # print('train shape before flattening: {}'.format(X.shape))
     if dropInitial:
         X = X[:, :, int(X.shape[2]/3):]
     X = X.reshape(X.shape[0], X.shape[1] * X.shape[2])
@@ -33,7 +33,7 @@ def train_model(subjectNo, dropInitial=False, modelType='logreg'):
             model = LogisticRegression(solver='liblinear', penalty='l1')
         elif modelType == 'rfc':
             model = RandomForestClassifier(
-                n_estimators=100, max_depth=2, random_state=0)
+                n_estimators=20, random_state=0)
         elif modelType == 'svm':
             model = SVC(gamma='auto')
 
@@ -43,22 +43,27 @@ def train_model(subjectNo, dropInitial=False, modelType='logreg'):
         # print(confusion_matrix(y_test, y_pred_class))
         acc = accuracy_score(y_test, y_pred_class)
         meanAcc += acc
-        # print('ACCURACY = {}'.format(acc))
     meanAcc /= 6
     print('mean accuracy for s{} = {}'.format(subjectNo, meanAcc))
     return meanAcc
 
 
 def main():
-    meanAcc = 0
+    accs = []
+    dropInitial = False
     for i in range(1, 17):
         if i < 10:
             s = '0' + str(i)
         else:
             s = str(i)
-        meanAcc += train_model(s, dropInitial=False, modelType='logreg')
-    meanAcc /= 16
-    print('MEAN ACCURACY ACROSS ALL SUBJECTS = {}'.format(meanAcc))
+        acc = train_model(s, dropInitial=dropInitial, modelType='logreg')
+        accs.append(acc)
+    fname = '../results/individual_models'
+    if dropInitial:
+        fname += '_drop_initial'
+    fname += '.txt'
+    with open(fname, 'w') as f:
+        f.write('\n'.join([str(round(a, 2)) for a in accs]))
 
 
 if __name__ == '__main__':
