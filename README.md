@@ -1,1 +1,1 @@
-# brain_decoding_kaggle
+# Brain Decoding Kaggle DecMeg
